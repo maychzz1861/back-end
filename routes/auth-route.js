@@ -1,21 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const authenticate = require('../middlewares/authenticate');
-const authController = require('../controllers/auth-controller');
-const { Role, Gender } = require('../models/db'); // import enum จาก Prisma
+const userController = require('../controllers/auth-controller');
 
-router.post('/register', authController.register);
-router.post('/login', authController.login);
-router.get('/me', authenticate, authController.getme);
 
-// เพิ่ม endpoint เพื่อให้ไคลเอนต์สามารถเรียกดูค่าทั้งหมดของ enum Role
-router.get('/roles', (req, res) => {
-  res.json({ roles: Object.values(Role) });
-});
+// สร้างเส้นทางสำหรับลงทะเบียนผู้ใช้ใหม่
+router.post('/register', userController.register);
 
-// เพิ่ม endpoint เพื่อให้ไคลเอนต์สามารถเรียกดูค่าทั้งหมดของ enum Gender
-router.get('/genders', (req, res) => {
-  res.json({ genders: Object.values(Gender) });
-});
+// สร้างเส้นทางสำหรับเข้าสู่ระบบ
+router.post('/login', userController.login);
+
+// สร้างเส้นทางสำหรับเรียกข้อมูลของผู้ใช้ปัจจุบัน
+router.get('/me', authenticate, userController.getme);
+
+// สร้างเส้นทางสำหรับเข้าสู่ระบบในฐานะผู้ดูแลระบบ
+router.post('/admin/login', userController.adminLogin);
 
 module.exports = router;

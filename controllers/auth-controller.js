@@ -36,7 +36,6 @@ exports.register = async (req, res, next) => {
     next(err);
   }
 };
-
 exports.login = async (req, res, next) => {
   const { email, password } = req.body;
   try {
@@ -66,7 +65,14 @@ exports.login = async (req, res, next) => {
       expiresIn: '30d',
     });
 
-    res.json({ token });
+    // check if user is admin
+    if (user.role === 'ADMIN') {
+      // Handle admin login
+      res.json({ token, role: 'ADMIN' });
+    } else {
+      // Handle regular user login
+      res.json({ token, role: 'USER' });
+    }
   } catch (err) {
     next(err);
   }
@@ -85,6 +91,40 @@ exports.getme = async (req, res, next) => {
     }
 
     res.json(user);
+  } catch (err) {
+    next(err);
+  }
+};
+exports.adminLogin = async (req, res, next) => {
+  const { email, password } = req.body;
+  try {
+    // validation
+    if (!(email && password)) {
+      throw new Error('Email and password must be provided');
+    }
+
+    // find admin in the database by email and role
+    const admin = await prisma.user.findUnique({
+      where: { email, role: 'ADMIN' },
+    });
+    
+    if (!admin) {
+      throw new Error('Admin not found');
+    }
+
+    // check password
+    const pwOk = await bcrypt.compare(password, admin.password);
+    if (!pwOk) {
+      throw new Error('Invalid login credentials');
+    }
+
+    // issue jwt token
+    const payload = { id: admin.id };
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: '30d',
+    });
+
+    res.json({ token });
   } catch (err) {
     next(err);
   }
